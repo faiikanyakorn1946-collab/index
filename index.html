@@ -115,7 +115,13 @@ footer{
 <input id="name" required>
 
 <label>รหัสสมาชิก (ถ้ามี)</label>
-<input id="member">
+<input
+  id="member"
+  inputmode="numeric"
+  pattern="[0-9]*"
+  maxlength="5"
+  placeholder="เช่น 00998"
+>
 
 <label>อีเมล (สำหรับติดต่อกลับ)</label>
 <input id="email" type="email" required>
@@ -155,11 +161,43 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzCcJOyiM6gakCsvLJs
 const form = document.getElementById("feedbackForm");
 const statusBox = document.getElementById("status");
 const submitBtn = document.getElementById("submitBtn");
+const memberInput = document.getElementById("member");
+
+/* =========================
+   คุมรหัสสมาชิก
+   ========================= */
+
+// พิมพ์ได้เฉพาะตัวเลข + ไม่เกิน 5 หลัก
+memberInput.addEventListener("input", () => {
+  memberInput.value = memberInput.value.replace(/\D/g, "");
+  if (memberInput.value.length > 5) {
+    memberInput.value = memberInput.value.slice(0, 5);
+  }
+});
+
+// เติม 0 ด้านหน้าเมื่อออกจากช่อง
+memberInput.addEventListener("blur", () => {
+  if (memberInput.value !== "") {
+    memberInput.value = memberInput.value.padStart(5, "0");
+  }
+});
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   submitBtn.disabled = true;
   statusBox.innerHTML = "";
+
+  /* ===== ตรวจรหัสสมาชิก ===== */
+  const memberValue = memberInput.value.trim();
+  if (memberValue !== "") {
+    const memberNumber = Number(memberValue);
+    if (memberNumber < 1 || memberNumber > 30000) {
+      statusBox.innerHTML =
+        '<div class="notice error">❌ รหัสสมาชิกต้องอยู่ระหว่าง 00001 – 30000</div>';
+      submitBtn.disabled = false;
+      return;
+    }
+  }
 
   let fileData = null;
   const file = document.getElementById("file").files[0];
@@ -185,15 +223,14 @@ form.addEventListener("submit", async (e) => {
   }
 
   const payload = {
-  name: document.getElementById("name").value,
-  member: document.getElementById("member").value,
-  email: document.getElementById("email").value,
-  type: document.getElementById("type").value,
-  topic: document.getElementById("topic").value,
-  detail: document.getElementById("detail").value,
-  file: fileData
-};
-
+    name: document.getElementById("name").value,
+    member: memberValue, // ส่งแบบ 5 หลัก
+    email: document.getElementById("email").value,
+    type: document.getElementById("type").value,
+    topic: document.getElementById("topic").value,
+    detail: document.getElementById("detail").value,
+    file: fileData
+  };
 
   try {
     const res = await fetch(WEB_APP_URL, {
@@ -215,59 +252,23 @@ form.addEventListener("submit", async (e) => {
 });
 </script>
 
-<style> /* =========================
-   Responsive เพิ่มเติม
-   ========================= */
-
-/* มือถือ */
+<style>
 @media (max-width: 600px) {
-  .container {
-    margin: 16px auto;
-    padding: 12px;
-  }
-
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .logo {
-    width: 56px;
-    height: 56px;
-    font-size: 18px;
-  }
-
-  .title h2 {
-    font-size: 20px;
-  }
-
-  .card {
-    padding: 18px;
-  }
-
-  button {
-    width: 100%;
-    font-size: 16px;
-  }
+  .container { margin: 16px auto; padding: 12px; }
+  .header { flex-direction: column; align-items: flex-start; }
+  .logo { width: 56px; height: 56px; font-size: 18px; }
+  .title h2 { font-size: 20px; }
+  .card { padding: 18px; }
+  button { width: 100%; font-size: 16px; }
 }
-
-/* แท็บเล็ต */
 @media (min-width: 601px) and (max-width: 1024px) {
-  .container {
-    max-width: 720px;
-  }
+  .container { max-width: 720px; }
 }
-
-/* จอใหญ่ / โน้ตบุ๊ค */
 @media (min-width: 1200px) {
-  .container {
-    max-width: 1000px;
-  }
-
-  body {
-    font-size: 16px;
-  }
+  .container { max-width: 1000px; }
+  body { font-size: 16px; }
 }
- </style>
+</style>
+
 </body>
 </html>
